@@ -1,0 +1,8 @@
+{
+  "name": "APU NEXT",
+  "description": "A professional career and networking platform connecting students, alumni, and employers through an intuitive, modular frontend prototype.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
