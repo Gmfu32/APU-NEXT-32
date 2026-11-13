@@ -41,7 +41,9 @@ engine_options: dict[str, Any] = {"pool_pre_ping": True}
 if DATABASE_URL.startswith("sqlite"):
     engine_options["connect_args"] = {"check_same_thread": False}
 engine = create_engine(DATABASE_URL, **engine_options)
-AUTH_SECRET = os.getenv("AUTH_SECRET", "local-development-secret-change-before-deployment")
+# Use a process-local random key for development when none is configured. A
+# deployment must set AUTH_SECRET to a stable, private value.
+AUTH_SECRET = os.getenv("AUTH_SECRET") or secrets.token_urlsafe(48)
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "./uploads")).resolve()
 EVENT_QR_PATH = BACKEND_DIR / "assets" / "event-qr.webp"
 CAREERJET_API_URL = "https://search.api.careerjet.net/v4/query"

@@ -1,9 +1,14 @@
 node_modules/
 dist/
+.vscode/
 .venv/
 **/.venv/
 __pycache__/
 **/__pycache__/
+.pytest_cache/
+**/.pytest_cache/
+*.py[cod]
+*.log
 uploads/
 **/uploads/
 backend/knowledge/
