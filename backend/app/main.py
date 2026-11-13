@@ -43,7 +43,10 @@ if DATABASE_URL.startswith("sqlite"):
 engine = create_engine(DATABASE_URL, **engine_options)
 # Use a process-local random key for development when none is configured. A
 # deployment must set AUTH_SECRET to a stable, private value.
-AUTH_SECRET = os.getenv("AUTH_SECRET") or secrets.token_urlsafe(48)
+configured_auth_secret = os.getenv("AUTH_SECRET", "").strip()
+if configured_auth_secret == "replace-with-a-long-random-secret-before-deployment":
+    configured_auth_secret = ""
+AUTH_SECRET = configured_auth_secret or secrets.token_urlsafe(48)
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "./uploads")).resolve()
 EVENT_QR_PATH = BACKEND_DIR / "assets" / "event-qr.webp"
 CAREERJET_API_URL = "https://search.api.careerjet.net/v4/query"
@@ -513,6 +516,8 @@ def register(payload: AuthPayload) -> dict[str, Any]:
         raise HTTPException(422, "Only student registration accepts an academic programme")
     if role == "admin":
         expected_code = os.getenv("CAREER_STAFF_INVITE_CODE", "")
+        if expected_code == "choose-a-private-career-centre-invite-code":
+            expected_code = ""
         if not expected_code or not hmac.compare_digest(payload.staff_code or "", expected_code):
             raise HTTPException(403, "Career Centre staff registration requires the configured invite code")
     email = payload.email.strip().lower()
