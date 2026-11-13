@@ -6,10 +6,16 @@ import { API_CONFIG } from '../../services/apiClient';
 export const SettingsPage: React.FC = () => {
   const { user, showToast, setShowAuthModal } = useApp();
 
+  const [darkTheme, setDarkTheme] = useState(() => localStorage.getItem('apu-next-theme') === 'dark');
   const [matchAlerts, setMatchAlerts] = useState(true);
   const [deadlineReminders, setDeadlineReminders] = useState(true);
   const [alumniVisibility, setAlumniVisibility] = useState(true);
   const [employerRecruiterSearch, setEmployerRecruiterSearch] = useState(true);
+
+  React.useEffect(() => {
+    document.body.classList.toggle('dark-theme', darkTheme);
+    localStorage.setItem('apu-next-theme', darkTheme ? 'dark' : 'light');
+  }, [darkTheme]);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -53,6 +59,13 @@ export const SettingsPage: React.FC = () => {
       </section>
 
       {/* Notification & Privacy Toggles */}
+      <section className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+        <h2 className="text-base font-bold text-slate-900">Appearance</h2>
+        <div className="flex items-center justify-between gap-4">
+          <div><p className="text-sm font-bold text-slate-900">Black theme</p><p className="mt-1 text-xs text-slate-500">Use a darker interface for evening study and reduced glare.</p></div>
+          <button type="button" role="switch" aria-checked={darkTheme} onClick={() => setDarkTheme(current => !current)} className={`w-11 h-6 rounded-full p-0.5 ${darkTheme ? 'bg-blue-600' : 'bg-slate-300'}`}><span className={`block h-5 w-5 rounded-full bg-white transition-transform ${darkTheme ? 'translate-x-5' : ''}`} /></button>
+        </div>
+      </section>
       <section className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
         <h2 className="text-base font-bold text-slate-900">Notifications & Profile Privacy</h2>
 
@@ -129,30 +142,25 @@ export const HelpSupportPage: React.FC = () => {
 
   const faqs = [
     {
-      q: 'Is APU NEXT an official university system?',
-      a: 'No. APU NEXT is an independent, student-developed hackathon prototype inspired by the APU student career ecosystem. All profiles, employer listings, and approvals are demonstration data.',
+      q: 'Where is the APU Career Centre located?',
+      a: 'The Career Centre is based at Asia Pacific University of Technology & Innovation, Technology Park Malaysia, Bukit Jalil, 57000 Kuala Lumpur, Malaysia.',
     },
     {
-      q: 'Do I have to upload a CV to browse opportunities?',
-      a: 'No—uploading a CV on My Profile is completely optional. You can browse, filter, save, and test simulated applications with or without attaching a PDF.',
+      q: 'How can I contact the Career Centre?',
+      a: 'You can contact APU through the official university contact page or email the Career Centre at apucc@apu.edu.my. The APU contact page is linked below.',
     },
     {
-      q: 'How can judges test the Employer and Career Centre Admin dashboards?',
-      a: 'Use the "Demo View: Student | Employer | Career Admin" switcher in the top header bar at any time without needing separate login accounts.',
-    },
-    {
-      q: 'Can this frontend project be exported to VS Code and connected to FastAPI?',
-      a: 'Yes. The project uses standard React, TypeScript, Vite, and Tailwind CSS with zero proprietary SDK lock-in. Configure VITE_API_BASE_URL in .env.local to connect a Python/FastAPI backend.',
+      q: 'What should I bring when meeting the Career Centre?',
+      a: 'Bring your current CV, student details, placement dates, and a short description of the roles or industries you are targeting.',
     },
   ];
 
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Help, Support & Prototype FAQ</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Help & Support</h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Guidance on using APU NEXT modules, industrial training procedures, and hackathon demo
-          controls.
+          Get help with your profile, opportunities, applications, and career planning.
         </p>
       </div>
 
@@ -177,24 +185,27 @@ export const HelpSupportPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-blue-600" />
             <h2 className="text-sm font-bold text-slate-900">
-              Career & Placement Advisory Desk (Sample Info)
+              APU Career Centre
             </h2>
           </div>
           <p className="text-slate-600 leading-relaxed">
-            Consultation Hours: Monday – Friday, 9:00 AM – 5:30 PM MYT
+            Asia Pacific University of Technology & Innovation<br />
+            Technology Park Malaysia, Bukit Jalil<br />
+            57000 Kuala Lumpur, Malaysia
           </p>
           <p className="text-slate-600 flex items-center gap-1.5">
             <Mail className="w-3.5 h-3.5 text-slate-400" />
-            <span>support-demo@apunext-prototype.example</span>
+            <a href="mailto:apucc@apu.edu.my" className="hover:text-blue-700">apucc@apu.edu.my</a>
           </p>
+          <a href="https://new.apu.edu.my/connect" target="_blank" rel="noreferrer" className="inline-flex text-xs font-bold text-blue-700 hover:underline">Official APU contact page →</a>
         </section>
 
         <section className="bg-white rounded-xl border border-slate-200 p-6 space-y-3">
-          <h2 className="text-sm font-bold text-slate-900">Submit Support Inquiry (Demo)</h2>
+          <h2 className="text-sm font-bold text-slate-900">Submit Support Inquiry</h2>
           {submitted ? (
             <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Support ticket logged in prototype session.</span>
+              <span>Support inquiry recorded for follow-up.</span>
             </div>
           ) : (
             <form
@@ -202,7 +213,7 @@ export const HelpSupportPage: React.FC = () => {
                 e.preventDefault();
                 if (!subject.trim() || !message.trim()) return;
                 setSubmitted(true);
-                showToast('Support inquiry submitted (Demo)');
+                showToast('Support inquiry submitted');
               }}
               className="space-y-3"
             >

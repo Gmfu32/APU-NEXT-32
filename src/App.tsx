@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Sidebar } from './components/layout/Sidebar';
@@ -12,6 +12,7 @@ import { ScholarshipsPage } from './pages/student/ScholarshipsPage';
 import { StudentPackagePage } from './pages/student/StudentPackagePage';
 import { InterviewPracticePage } from './pages/student/InterviewPracticePage';
 import { CareerGuidancePage } from './pages/student/CareerGuidancePage';
+import { InternshipReportsPage } from './pages/student/InternshipReportsPage';
 import { MentorBookingPage } from './pages/student/MentorBookingPage';
 import { WorkshopsPage } from './pages/student/WorkshopsPage';
 import { ResourcesPage } from './pages/student/ResourcesPage';
@@ -23,6 +24,7 @@ import { InternshipManagementPage } from './pages/student/InternshipManagementPa
 import { AiAssistantPage } from './pages/student/AiAssistantPage';
 import { NotificationsPage } from './pages/student/NotificationsPage';
 import { HelpSupportPage, SettingsPage } from './pages/student/AccountPages';
+import { MessagesPage, PostsPage } from './pages/shared/CommunityPages';
 import { EmployerPortal } from './pages/employer/EmployerPortal';
 import { AdminPortal } from './pages/admin/AdminPortal';
 import { FloatingAssistant } from './components/common/FloatingAssistant';
@@ -47,6 +49,13 @@ const WorkspaceContent: React.FC = () => {
   }
 
   const renderPage = () => {
+    if ((activePage === 'messages' || activePage === 'adm-messages') && role !== 'employer') return <MessagesPage />;
+    if ((activePage === 'posts' || activePage === 'adm-posts') && role !== 'employer') return <PostsPage />;
+    if (role === 'employer' && (activePage === 'messages' || activePage === 'posts' || activePage === 'adm-messages' || activePage === 'adm-posts')) {
+      return <EmployerPortal page="emp-dashboard" />;
+    }
+    if (activePage === 'settings' || activePage === 'adm-settings' || activePage === 'emp-settings') return <SettingsPage />;
+    if (activePage === 'help-support' || activePage === 'adm-help-support' || activePage === 'emp-help-support') return <HelpSupportPage />;
     if (role === 'employer' && activePage.startsWith('emp-')) {
       return <EmployerPortal page={activePage as EmployerPageId} />;
     }
@@ -72,6 +81,8 @@ const WorkspaceContent: React.FC = () => {
         return <InterviewPracticePage />;
       case 'career-guidance':
         return <CareerGuidancePage />;
+      case 'internship-reports':
+        return <InternshipReportsPage />;
       case 'mentor-booking':
         return <MentorBookingPage />;
       case 'workshops':
@@ -96,10 +107,6 @@ const WorkspaceContent: React.FC = () => {
         return <AiAssistantPage />;
       case 'notifications':
         return <NotificationsPage />;
-      case 'settings':
-        return <SettingsPage />;
-      case 'help-support':
-        return <HelpSupportPage />;
       default:
         return <StudentDashboard />;
     }
@@ -120,7 +127,6 @@ const WorkspaceContent: React.FC = () => {
           <span>
             APU NEXT · Student Career Workspace
           </span>
-          <span>React · FastAPI · SQL</span>
         </footer>
       </div>
 
@@ -140,6 +146,9 @@ const WorkspaceContent: React.FC = () => {
 };
 
 export function App() {
+  useEffect(() => {
+    document.body.classList.toggle('dark-theme', localStorage.getItem('apu-next-theme') === 'dark');
+  }, []);
   return (
     <AppProvider>
       <WorkspaceContent />

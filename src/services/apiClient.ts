@@ -6,7 +6,7 @@
  */
 
 export const API_CONFIG = {
-  baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1',
+  baseUrl: import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000/api/v1`,
   useMockData: import.meta.env.VITE_USE_MOCK_DATA === 'true',
 };
 
@@ -51,6 +51,9 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     const body = await response.json().catch(() => null) as { detail?: string } | null;
+    if (response.status === 404 && body?.detail === 'Not Found') {
+      throw new Error('The running API is missing this route. Stop and restart the backend from the backend folder with: uvicorn app.main:app --reload --port 8000');
+    }
     throw new Error(body?.detail || `Request failed (${response.status})`);
   }
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Award,
   Briefcase,
@@ -18,6 +18,7 @@ import { DemoAvatar } from '../../components/common/DemoAvatar';
 import { Modal } from '../../components/common/Modal';
 import { API_CONFIG, apiRequest } from '../../services/apiClient';
 import { StudentProfile } from '../../types';
+import { ProgrammeSelector } from '../../components/common/ProgrammeSelector';
 
 export const MyProfilePage: React.FC = () => {
   const { studentProfile, updateStudentProfile, showToast } = useApp();
@@ -39,6 +40,10 @@ export const MyProfilePage: React.FC = () => {
   const [projStack, setProjStack] = useState('');
   const [projSummary, setProjSummary] = useState('');
 
+  useEffect(() => {
+    if (!editing) setDraft(studentProfile);
+  }, [studentProfile, editing]);
+
   const completeness = useMemo(() => {
     let score = 0;
     if (studentProfile.name && studentProfile.email) score += 20;
@@ -52,6 +57,7 @@ export const MyProfilePage: React.FC = () => {
   }, [studentProfile]);
 
   const handleSave = async () => {
+    if (!draft.programmeId) { showToast('Choose your academic programme from the catalogue before saving.'); return; }
     if (draft.internshipStartDate && draft.internshipEndDate && draft.internshipStartDate > draft.internshipEndDate) { showToast('Placement end date must be after start date'); return; }
     try { await updateStudentProfile(draft); setEditing(false); }
     catch { /* Context displays the API error; keep edits open for retry. */ }
@@ -245,13 +251,17 @@ export const MyProfilePage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Degree</label>
-                    <input
-                      type="text"
-                      value={draft.degree}
-                      onChange={(e) => setDraft({ ...draft, degree: e.target.value })}
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300"
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Academic programme</label>
+                    <ProgrammeSelector
+                      value={draft.programmeId || ''}
+                      onChange={(programmeId, programme) => setDraft({
+                        ...draft,
+                        programmeId,
+                        ...(programme ? { degree: programme.name } : {}),
+                      })}
+                      required
                     />
+                    <p className="mt-1 text-[11px] text-slate-500">The catalogue selection keeps your programme consistent across APU NEXT.</p>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -419,7 +429,7 @@ export const MyProfilePage: React.FC = () => {
                     <span className="truncate">{studentProfile.cvFileName}</span>
                   </p>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Updated {studentProfile.cvUpdatedDate} · The CV itself is not stored; only the profile fields and filename are saved.
+                    Updated {studentProfile.cvUpdatedDate} · The original CV is stored securely with your profile.
                   </p>
                   {cvFileUrl && <a href={cvFileUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-[11px] font-semibold text-blue-700 hover:underline">Open selected CV</a>}
                 </div>
@@ -522,7 +532,7 @@ export const MyProfilePage: React.FC = () => {
       </div>
 
       <Modal open={profileMethodOpen} onClose={() => setProfileMethodOpen(false)} title="Choose how to update your profile" subtitle="Start with your CV or enter details yourself.">
-        <div className="grid gap-3 sm:grid-cols-2"><button type="button" onClick={() => { setDraft(studentProfile); setEditing(true); setProfileMethodOpen(false); setReviewNotice(''); }} className="rounded-xl border border-slate-200 p-5 text-left hover:border-blue-400 hover:bg-blue-50"><strong className="block text-sm text-slate-900">Enter details manually</strong><span className="mt-1 block text-xs text-slate-600">Edit your education, dates, skills and experience directly.</span></button><button type="button" onClick={() => cvInputRef.current?.click()} className="rounded-xl border border-slate-200 p-5 text-left hover:border-blue-400 hover:bg-blue-50"><strong className="block text-sm text-slate-900">Upload a CV</strong><span className="mt-1 block text-xs text-slate-600">Review extracted fields before anything is saved.</span></button></div>
+        <div className="grid gap-3 sm:grid-cols-2"><button type="button" onClick={() => { setDraft(studentProfile); setEditing(true); setProfileMethodOpen(false); setReviewNotice(''); }} className="rounded-xl border border-slate-200 p-5 text-left hover:border-blue-400 hover:bg-blue-50"><strong className="block text-sm text-slate-900">Edit saved profile</strong><span className="mt-1 block text-xs text-slate-600">Continue editing your saved CV details without uploading again.</span></button><button type="button" onClick={() => cvInputRef.current?.click()} className="rounded-xl border border-slate-200 p-5 text-left hover:border-blue-400 hover:bg-blue-50"><strong className="block text-sm text-slate-900">Replace CV and extract again</strong><span className="mt-1 block text-xs text-slate-600">Upload a newer CV, review the suggested fields, then save your changes.</span></button></div>
       </Modal>
 
       {/* Add Project Modal */}

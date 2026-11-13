@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Award,
   BarChart3,
@@ -7,8 +7,9 @@ import {
   Bot,
   Briefcase,
   Building2,
-  Calendar,
   CalendarCheck,
+  Globe2,
+  ClipboardList,
   CheckCircle2,
   ClipboardCheck,
   Compass,
@@ -34,6 +35,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { AdminPageId, AnyPageId, EmployerPageId, StudentPageId } from '../../types';
+import { apiRequest } from '../../services/apiClient';
 
 interface NavGroup {
   label: string;
@@ -46,8 +48,16 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) => {
-  const { role, activePage, navigate } = useApp();
+  const { role, activePage, navigate, user } = useApp();
   const [logoError, setLogoError] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  useEffect(() => {
+    if (!user.id || role === 'employer') return;
+    const load = () => apiRequest<{ count: number }>('/community/messages/unread').then(result => setUnreadMessages(result.data.count)).catch(() => undefined);
+    load();
+    const timer = window.setInterval(load, 15000);
+    return () => window.clearInterval(timer);
+  }, [user.id, role]);
 
   const studentGroups: NavGroup[] = [
     {
@@ -57,6 +67,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) =
         { id: 'profile' as StudentPageId, label: 'My Profile', icon: User },
         { id: 'opportunities' as StudentPageId, label: 'Internship Opportunities', icon: Briefcase },
         { id: 'career-guidance' as StudentPageId, label: 'Career Guidance', icon: Compass },
+        { id: 'internship-reports' as StudentPageId, label: 'Internship Reports', icon: ClipboardCheck },
+        { id: 'messages' as StudentPageId, label: 'Messages', icon: MessageSquare, badge: unreadMessages },
+        { id: 'posts' as StudentPageId, label: 'Posts', icon: FileText },
+        { id: 'settings' as StudentPageId, label: 'Settings', icon: Settings },
+        { id: 'help-support' as StudentPageId, label: 'Help & Support', icon: HelpCircle },
       ],
     },
   ];
@@ -67,16 +82,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) =
       items: [
         { id: 'adm-dashboard' as AdminPageId, label: 'Dashboard', icon: Home },
         { id: 'adm-company-approvals' as AdminPageId, label: 'Company Approvals', icon: ShieldCheck },
+        { id: 'adm-careerjet-discovery' as AdminPageId, label: 'Careerjet Discovery', icon: Globe2 },
         { id: 'adm-opportunity-approvals' as AdminPageId, label: 'Opportunity Matching', icon: CheckCircle2 },
-        { id: 'adm-career-fair' as AdminPageId, label: 'Career Fair Management', icon: Calendar },
+        { id: 'adm-career-requests' as AdminPageId, label: 'Requests', icon: ClipboardList },
+        { id: 'adm-internship-monitoring' as AdminPageId, label: 'Internship Reports', icon: ClipboardCheck },
+        { id: 'adm-messages' as AdminPageId, label: 'Messages', icon: MessageSquare, badge: unreadMessages },
+        { id: 'adm-posts' as AdminPageId, label: 'Posts', icon: FileText },
+        { id: 'adm-settings' as AdminPageId, label: 'Settings', icon: Settings },
+        { id: 'adm-help-support' as AdminPageId, label: 'Help & Support', icon: HelpCircle },
       ],
     },
   ];
 
   const employerGroups: NavGroup[] = [{ label: 'Employer Workspace', items: [
     { id: 'emp-dashboard' as EmployerPageId, label: 'Dashboard', icon: Home },
+    { id: 'emp-profile' as EmployerPageId, label: 'Company Profile', icon: User },
     { id: 'emp-post-opportunity' as EmployerPageId, label: 'Post a Listing', icon: Briefcase },
     { id: 'emp-manage-opportunities' as EmployerPageId, label: 'My Listings', icon: Building2 },
+    { id: 'emp-applications' as EmployerPageId, label: 'Applicants', icon: Users },
+    { id: 'emp-settings' as EmployerPageId, label: 'Settings', icon: Settings },
+    { id: 'emp-help-support' as EmployerPageId, label: 'Help & Support', icon: HelpCircle },
   ] }];
 
   const activeGroups = role === 'student' ? studentGroups : role === 'admin' ? adminGroups : employerGroups;
@@ -94,8 +119,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) =
               <div className="flex items-center gap-2.5">
                 <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#0D1526]">
                 <img
-                  src="/assets/brand/apu-career-centre-square.webp"
-                  alt="APU Career Centre"
+                  src="/assets/aistudio/Apu_Logo_9c651e3c.jpg"
+                  alt="APU"
                   referrerPolicy="no-referrer"
                   onError={() => setLogoError(true)}
                   className="h-full w-full object-cover"

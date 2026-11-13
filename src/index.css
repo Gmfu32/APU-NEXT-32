@@ -15,6 +15,148 @@
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+
+  body.dark-theme {
+    background-color: #0b1120;
+    color: #e2e8f0;
+  }
+
+  body.dark-theme #root > div {
+    background-color: #0b1120 !important;
+  }
+
+  body.dark-theme input,
+  body.dark-theme textarea,
+  body.dark-theme select {
+    background-color: #0f172a;
+    color: #f8fafc;
+    border-color: #334155;
+  }
+
+  body.dark-theme main,
+  body.dark-theme footer {
+    color: #e2e8f0;
+  }
+
+  body.dark-theme .bg-white {
+    background-color: #111827;
+  }
+
+  body.dark-theme .bg-slate-50,
+  body.dark-theme .bg-slate-100 {
+    background-color: #1e293b;
+  }
+
+  body.dark-theme .bg-blue-50,
+  body.dark-theme .bg-indigo-50,
+  body.dark-theme .bg-emerald-50,
+  body.dark-theme .bg-amber-50,
+  body.dark-theme .bg-red-50 {
+    background-color: #172554;
+  }
+
+  body.dark-theme .text-blue-800,
+  body.dark-theme .text-blue-700,
+  body.dark-theme .text-indigo-700,
+  body.dark-theme .text-emerald-900,
+  body.dark-theme .text-amber-900,
+  body.dark-theme .text-red-700 {
+    color: #bfdbfe;
+  }
+
+  body.dark-theme .text-slate-900,
+  body.dark-theme .text-slate-800 {
+    color: #f8fafc;
+  }
+
+  body.dark-theme .text-slate-700,
+  body.dark-theme .text-slate-600 {
+    color: #cbd5e1;
+  }
+
+  body.dark-theme .text-slate-500,
+  body.dark-theme .text-slate-400 {
+    color: #94a3b8;
+  }
+
+  body.dark-theme .border-slate-200,
+  body.dark-theme .border-slate-300 {
+    border-color: #334155;
+  }
+
+  body.dark-theme .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #334155;
+  }
+
+  body.dark-theme .placeholder\:text-slate-400::placeholder {
+    color: #94a3b8;
+  }
+
+  body.dark-theme .community-page .community-heading {
+    color: #f8fafc !important;
+  }
+
+  body.dark-theme .community-page .community-eyebrow {
+    color: #60a5fa !important;
+  }
+
+  body.dark-theme .community-page .community-description,
+  body.dark-theme .community-page .community-muted,
+  body.dark-theme .community-page .community-contact-role {
+    color: #cbd5e1 !important;
+  }
+
+  body.dark-theme .community-page .community-contact-name {
+    color: #f8fafc !important;
+  }
+
+  .community-page .community-contact-name {
+    color: #0f172a;
+  }
+
+  .community-page .community-contact-role,
+  .community-page .community-muted {
+    color: #64748b;
+  }
+
+  body.dark-theme .community-page .community-surface,
+  body.dark-theme .community-page .community-contact,
+  body.dark-theme .community-page .community-contact:hover {
+    background-color: #111827 !important;
+    border-color: #334155 !important;
+  }
+
+  body.dark-theme .community-page .community-contact.bg-blue-50 {
+    background-color: #1d4ed8 !important;
+    color: #ffffff !important;
+  }
+
+  body.dark-theme .community-page textarea,
+  body.dark-theme .community-page input {
+    color: #f8fafc !important;
+    background-color: #0f172a !important;
+  }
+
+  body.dark-theme .admin-report-card,
+  body.dark-theme .admin-report-page .bg-white {
+    background-color: #111827 !important;
+    border-color: #334155 !important;
+  }
+
+  body.dark-theme .admin-report-file {
+    border-color: #334155 !important;
+    background-color: #172033 !important;
+  }
+
+  body.dark-theme .admin-report-comment {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
+  }
+
+  body.dark-theme a:not([class*="text-white"]) {
+    color: #93c5fd;
+  }
 }
 
 .sidebar-scroll::-webkit-scrollbar {
@@ -29,4 +171,39 @@
 }
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.4);
+}
+
+body.dark-theme .community-page .community-heading {
+  color: #f8fafc !important;
+}
+
+body.dark-theme .community-page .community-eyebrow {
+  color: #60a5fa !important;
+}
+
+body.dark-theme .community-page .community-description,
+body.dark-theme .community-page .community-muted,
+body.dark-theme .community-page .community-contact-role {
+  color: #cbd5e1 !important;
+}
+
+body.dark-theme .community-page .community-contact-name {
+  color: #f8fafc !important;
+}
+
+body.dark-theme .community-page .community-compose {
+  background-color: #172554 !important;
+  border-color: #1d4ed8 !important;
+}
+
+body.dark-theme .community-page .community-input {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+  caret-color: #f8fafc !important;
+}
+
+body.dark-theme .community-page .community-input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1;
 }

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import {
   AdminCompanyApprovalItem,
   AlumniMember,
@@ -70,7 +70,7 @@ interface AppContextValue {
   matchResponses: Record<string, 'interested' | 'passed'>;
   respondToMatch: (id: string, response: 'interested' | 'passed') => void;
   toggleSaveOpportunity: (id: string) => void;
-  applyToOpportunity: (id: string, note: string) => void;
+  applyToOpportunity: (id: string, note: string, shareCv: boolean) => Promise<void>;
 
   savedBoothIds: string[];
   toggleSaveBooth: (id: string) => void;
@@ -119,7 +119,7 @@ interface AppContextValue {
   updateApplicantStatus: (applicantId: string, status: EmployerApplicant['status']) => void;
   employerMessages: EmployerMessageThread[];
   sendEmployerReply: (threadId: string, text: string) => void;
-  postEmployerOpportunity: (opp: Omit<Opportunity, 'id' | 'isDemoListing'>) => void;
+  postEmployerOpportunity: (opp: Omit<Opportunity, 'id' | 'isDemoListing'>) => Promise<Opportunity>;
 
   adminCompanies: AdminCompanyApprovalItem[];
   updateAdminCompanyStatus: (id: string, status: AdminCompanyApprovalItem['status']) => void;
@@ -146,7 +146,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [role, setRole] = useState<UserRole>(user.role);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(() => !authService.currentUser());
 
-  const [activePage, setActivePage] = useState<AnyPageId>('dashboard');
+  const [activePage, setActivePage] = useState<AnyPageId>(() => {
+    const restoredUser = authService.currentUser();
+    return restoredUser ? DEFAULT_PAGE_BY_ROLE[restoredUser.role] : 'dashboard';
+  });
   const [focusedEntityId, setFocusedEntityId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -188,18 +191,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         const listings = (await apiRequest<Opportunity[]>('/opportunities')).data;
         const matchRows = role === 'student' ? (await apiRequest<Array<{ opportunity: Opportunity; response: 'interested' | 'passed' | null }>>(`/students/${encodeURIComponent(user.id)}/matches`)).data : [];
+        const applications = role === 'student' ? (await apiRequest<Array<{ opportunityId: string; appliedAt: string; status: string; note: string; applicationMode?: 'internal' | 'external' }>>(`/students/${encodeURIComponent(user.id)}/applications`)).data : [];
         if (!active) return;
         if (profile) setStudentProfile(profile);
         setOpportunities(listings);
-        setMatchResponses(Object.fromEntries(matchRows.filter((row) => row.response).map((row) => [row.opportunity.id, row.response as 'interested' | 'passed'])));
+        const appliedOpportunityIds = new Set(applications.map((application) => application.opportunityId));
+        setMatchResponses(Object.fromEntries(matchRows.filter((row) => row.response && !appliedOpportunityIds.has(row.opportunity.id)).map((row) => [row.opportunity.id, row.response as 'interested' | 'passed'])));
+        setAppliedOpportunityMap(Object.fromEntries(applications.map(application => [application.opportunityId, {
+          appliedAt: new Date(application.appliedAt).toLocaleDateString(),
+          status: application.status,
+          note: application.note,
+          applicationMode: application.applicationMode,
+        }])));
       } catch (error) {
-        if (active) showToast(`Backend unavailable: ${error instanceof Error ? error.message : 'check API and database setup'}`);
+        if (!active) return;
+        const message = error instanceof Error ? error.message : '';
+        if (message.includes('Session is invalid or has expired') || message.includes('Account no longer exists') || message.includes('company registration is awaiting Career Centre approval') || message.includes('company registration was rejected by the Career Centre')) {
+          logoutToAuthScreen();
+          showToast(message.includes('company registration') ? message : 'Your session expired. Please sign in again.');
+        } else {
+          showToast(`Backend unavailable: ${message || 'check API and database setup'}`);
+        }
       }
     })();
     return () => { active = false; };
   }, [user.id, role]);
   const [savedOpportunityIds, setSavedOpportunityIds] = useState<string[]>([]);
-  const [appliedOpportunityMap, setAppliedOpportunityMap] = useState<Record<string, { appliedAt: string; status: string; note: string }>>({});
+  const [appliedOpportunityMap, setAppliedOpportunityMap] = useState<Record<string, { appliedAt: string; status: string; note: string; applicationMode?: 'internal' | 'external' }>>({});
+  useEffect(() => {
+    if (!user.id) return;
+    const key = `apu-next-applications-${user.id}`;
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) setAppliedOpportunityMap(JSON.parse(saved) as Record<string, { appliedAt: string; status: string; note: string; applicationMode?: 'internal' | 'external' }>);
+    } catch {
+      localStorage.removeItem(key);
+    }
+  }, [user.id]);
+  useEffect(() => {
+    if (user.id) localStorage.setItem(`apu-next-applications-${user.id}`, JSON.stringify(appliedOpportunityMap));
+  }, [appliedOpportunityMap, user.id]);
 
   const [savedBoothIds, setSavedBoothIds] = useState<string[]>(['booth-01', 'booth-02', 'booth-03']);
   const [savedScholarshipIds, setSavedScholarshipIds] = useState<string[]>(['sch-01', 'sch-03']);
@@ -255,12 +286,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [employerMessages, setEmployerMessages] = useState<EmployerMessageThread[]>(INITIAL_EMPLOYER_MESSAGES);
   const [adminCompanies, setAdminCompanies] = useState<AdminCompanyApprovalItem[]>([]);
 
-  const showToast = (msg: string) => {
+  const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
     window.setTimeout(() => {
       setToastMessage((prev) => (prev === msg ? null : prev));
     }, 3200);
-  };
+  }, []);
 
   const switchRole = (nextRole: UserRole) => {
     if (nextRole !== role) showToast('Sign out and sign in with an account for that workspace.');
@@ -373,19 +404,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  const applyToOpportunity = (id: string, note: string) => {
+  const applyToOpportunity = async (id: string, note: string, shareCv: boolean) => {
     const opp = opportunities.find((o) => o.id === id);
+    if (!opp) throw new Error('This vacancy is no longer available.');
+    if (!API_CONFIG.useMockData) {
+      const { data } = await apiRequest<{ opportunityId: string; appliedAt: string; status: string; note: string; applicationMode?: 'internal' | 'external' }>('/applications/' + encodeURIComponent(id), {
+        method: 'POST',
+        body: JSON.stringify({ note, share_cv: shareCv }),
+      });
+      setAppliedOpportunityMap(prev => ({
+        ...prev,
+        [id]: { appliedAt: new Date(data.appliedAt).toLocaleDateString(), status: data.status, note: data.note, applicationMode: data.applicationMode },
+      }));
+      setMatchResponses((current) => {
+        const remaining = { ...current };
+        delete remaining[id];
+        return remaining;
+      });
+      showToast(data.applicationMode === 'external'
+        ? `External application link recorded for ${opp.company}; submission is not verified.`
+        : `Application submitted to ${opp.company}.`);
+      return;
+    }
     setAppliedOpportunityMap((prev) => ({
       ...prev,
       [id]: {
         appliedAt: '02 Nov 2026',
-        status: 'Submitted (Demo)',
-        note: note || 'Submitted with profile CV.',
+        status: opp.applicationMode === 'external' ? 'External Application Started' : 'Submitted (Demo)',
+        note: opp.applicationMode === 'external'
+          ? 'External application website opened from APU NEXT; completion is not confirmed.'
+          : note || 'Submitted with profile CV.',
+        applicationMode: opp.applicationMode || 'internal',
       },
     }));
-    if (opp) {
-      showToast(`Demonstration application submitted to ${opp.company}`);
-    }
+    setMatchResponses((current) => {
+      const remaining = { ...current };
+      delete remaining[id];
+      return remaining;
+    });
+    showToast(opp.applicationMode === 'external'
+      ? `External application link recorded for ${opp.company}; submission is not verified.`
+      : `Demonstration application submitted to ${opp.company}`);
   };
 
   const toggleSaveBooth = (id: string) => {
@@ -629,7 +688,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('Message sent (Demo)');
   };
 
-  const postEmployerOpportunity = (opp: Omit<Opportunity, 'id' | 'isDemoListing'>) => {
+  const postEmployerOpportunity = async (opp: Omit<Opportunity, 'id' | 'isDemoListing'>): Promise<Opportunity> => {
     const created: Opportunity = {
       ...opp,
       id: `opp-${Date.now()}`,
@@ -639,14 +698,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       sourceLabel: `Employer listing · ${user.id}`,
     };
     if (!API_CONFIG.useMockData) {
-      void apiRequest<{ opportunity: Opportunity; status: string }>('/employer/opportunities', { method: 'POST', body: JSON.stringify({ opportunity: created }) })
-        .then(({ data }) => { setOpportunities(current => [data.opportunity, ...current.filter(item => item.id !== data.opportunity.id)]); showToast('Listing submitted to Career Centre review. It will match students after approval.'); })
-        .catch(error => showToast(`Could not submit listing: ${error instanceof Error ? error.message : 'API error'}`));
-      return;
+      const { data } = await apiRequest<{ opportunity: Opportunity; status: string }>('/employer/opportunities', { method: 'POST', body: JSON.stringify({ opportunity: created }) });
+      setOpportunities(current => [data.opportunity, ...current.filter(item => item.id !== data.opportunity.id)]);
+      showToast('Listing submitted to Career Centre review. It will match students after approval.');
+      return data.opportunity;
     }
     setOpportunities((current) => [created, ...current]);
-    const matches = getStrongMatches(studentProfile, [created]);
-    showToast(`Listing published. ${matches.length} strong profile match(es) found.`);
+    showToast('Listing submitted for Career Centre review.');
+    return created;
   };
 
   const updateAdminCompanyStatus = (id: string, status: AdminCompanyApprovalItem['status']) => {

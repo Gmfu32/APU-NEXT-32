@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
-import { ArrowRight, BriefcaseBusiness, CalendarDays, CheckCircle2, Circle, MapPin, Sparkles, UserRound } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowRight, BriefcaseBusiness, CalendarDays, Clock3, MapPin, Sparkles, UserRound } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { getStrongMatches } from '../../services/matching';
 
 export const StudentDashboard: React.FC = () => {
   const [campusImageFailed, setCampusImageFailed] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const { studentProfile, opportunities, navigate } = useApp();
   const matches = useMemo(() => getStrongMatches(studentProfile, opportunities), [studentProfile, opportunities]);
   const completed = [studentProfile.name, studentProfile.email, studentProfile.major, studentProfile.skills.length, studentProfile.internshipStartDate && studentProfile.internshipEndDate, studentProfile.preferredLocations.length].filter(Boolean).length;
@@ -12,6 +13,26 @@ export const StudentDashboard: React.FC = () => {
   const placement = studentProfile.internshipStartDate && studentProfile.internshipEndDate
     ? `${new Date(`${studentProfile.internshipStartDate}T00:00:00`).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })} – ${new Date(`${studentProfile.internshipEndDate}T00:00:00`).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`
     : 'Add your placement dates';
+  const placementStart = studentProfile.internshipStartDate
+    ? new Date(`${studentProfile.internshipStartDate}T00:00:00`).getTime()
+    : null;
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const secondsUntilPlacement = placementStart === null ? null : Math.max(0, Math.floor((placementStart - now) / 1000));
+  const countdown = secondsUntilPlacement === null ? null : {
+    days: Math.floor(secondsUntilPlacement / 86400),
+    hours: Math.floor((secondsUntilPlacement % 86400) / 3600),
+    minutes: Math.floor((secondsUntilPlacement % 3600) / 60),
+    seconds: secondsUntilPlacement % 60,
+  };
+  const countdownUnits = countdown ? [
+    ['Days', countdown.days],
+    ['Hours', countdown.hours],
+    ['Minutes', countdown.minutes],
+    ['Seconds', countdown.seconds],
+  ] as const : [];
 
   return <div className="mx-auto max-w-6xl space-y-6 pb-8">
     <section className="relative isolate overflow-hidden rounded-2xl bg-gradient-to-br from-[#0D1526] via-[#152c60] to-blue-700 p-6 text-white shadow-sm sm:p-8">
@@ -31,12 +52,16 @@ export const StudentDashboard: React.FC = () => {
       <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><p className="text-sm font-semibold text-slate-600">Preferred locations</p><MapPin className="h-5 w-5 text-blue-600"/></div><p className="mt-3 line-clamp-2 min-h-7 font-bold text-slate-900">{studentProfile.preferredLocations.length ? studentProfile.preferredLocations.join(' · ') : 'Not selected'}</p><p className="mt-1 text-sm text-slate-500">Helps prioritize nearby roles</p><button onClick={() => navigate('profile')} className="mt-3 text-sm font-bold text-blue-700 hover:underline">Choose locations</button></article>
     </section>
 
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.15em] text-blue-700">Your next steps</p><h2 className="mt-1 text-xl font-bold text-slate-900">Get ready for a strong match</h2></div><button onClick={() => navigate('career-guidance')} className="inline-flex items-center gap-1 text-sm font-bold text-blue-700 hover:underline">Career guidance<ArrowRight size={15}/></button></div>
-      <div className="mt-5 grid gap-3 md:grid-cols-3">{[
-        { done: Boolean(studentProfile.major && studentProfile.email), title: 'Complete your student details', detail: 'Add your programme and contact details.', action: 'Open profile', page: 'profile' as const },
-        { done: studentProfile.skills.length > 0, title: 'Add your skills and experience', detail: 'Use skills from your CV, projects, and coursework.', action: 'Add skills', page: 'profile' as const },
-        { done: Boolean(studentProfile.internshipStartDate && studentProfile.internshipEndDate && studentProfile.preferredLocations.length), title: 'Set your placement preferences', detail: 'Choose a date range and locations as separate selections.', action: 'Set preferences', page: 'profile' as const },
-      ].map((item) => <article key={item.title} className="flex gap-3 rounded-xl bg-slate-50 p-4"><div className="pt-0.5">{item.done ? <CheckCircle2 className="h-5 w-5 text-emerald-600"/> : <Circle className="h-5 w-5 text-slate-300"/>}</div><div><h3 className="text-sm font-bold text-slate-900">{item.title}</h3><p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>{!item.done&&<button onClick={() => navigate(item.page)} className="mt-2 text-xs font-bold text-blue-700 hover:underline">{item.action}</button>}</div></article>)}</div>
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#0D1526] via-[#162e62] to-blue-700 px-5 py-6 text-white sm:px-7">
+        <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl"/>
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div><p className="text-xs font-bold uppercase tracking-[.15em] text-blue-200">Placement countdown</p><h2 className="mt-1 text-2xl font-extrabold">Your placement window opens in</h2><p className="mt-2 text-sm text-blue-100">{placementStart === null ? 'Set your placement start date to begin the countdown.' : secondsUntilPlacement === 0 ? 'Your placement window is now open.' : new Date(placementStart).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p></div>
+          <Clock3 className="h-7 w-7 text-blue-200"/>
+        </div>
+        {countdown ? <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">{countdownUnits.map(([label, value]) => <div key={label} className="rounded-xl border border-white/15 bg-slate-950/35 p-3 text-center shadow-inner"><div className="rounded-lg bg-slate-950/45 py-3 text-3xl font-extrabold tabular-nums tracking-tight sm:text-4xl">{String(value).padStart(2, '0')}</div><p className="mt-2 text-[10px] font-bold uppercase tracking-[.18em] text-blue-100">{label}</p></div>)}</div> : <button onClick={() => navigate('profile')} className="relative mt-6 inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-blue-800 hover:bg-blue-50">Set placement date <ArrowRight size={15}/></button>}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-7"><p className="text-sm text-slate-600"><span className="font-bold text-slate-900">Placement window:</span> {placement}</p><button onClick={() => navigate('profile')} className="inline-flex items-center gap-1 text-sm font-bold text-blue-700 hover:underline">Update dates<ArrowRight size={15}/></button></div>
     </section>
 
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.15em] text-blue-700">Opportunity matching</p><h2 className="mt-1 text-xl font-bold">Your current strong matches</h2></div>{matches.length>0&&<button onClick={() => navigate('opportunities')} className="text-sm font-bold text-blue-700 hover:underline">See all</button>}</div>

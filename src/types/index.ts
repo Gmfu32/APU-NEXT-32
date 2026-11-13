@@ -9,6 +9,7 @@ export type StudentPageId =
   | 'student-package'
   | 'interview-practice'
   | 'career-guidance'
+  | 'internship-reports'
   | 'mentor-booking'
   | 'workshops'
   | 'resources'
@@ -22,7 +23,9 @@ export type StudentPageId =
   | 'ai-assistant'
   | 'notifications'
   | 'settings'
-  | 'help-support';
+  | 'help-support'
+  | 'messages'
+  | 'posts';
 
 export type EmployerPageId =
   | 'emp-dashboard'
@@ -32,12 +35,15 @@ export type EmployerPageId =
   | 'emp-applications'
   | 'emp-career-fair'
   | 'emp-messages'
-  | 'emp-settings';
+  | 'emp-settings'
+  | 'emp-help-support';
 
 export type AdminPageId =
   | 'adm-dashboard'
   | 'adm-company-approvals'
   | 'adm-opportunity-approvals'
+  | 'adm-careerjet-discovery'
+  | 'adm-career-requests'
   | 'adm-student-directory'
   | 'adm-alumni-verification'
   | 'adm-career-fair'
@@ -46,7 +52,10 @@ export type AdminPageId =
   | 'adm-documents'
   | 'adm-analytics'
   | 'adm-content'
-  | 'adm-settings';
+  | 'adm-settings'
+  | 'adm-messages'
+  | 'adm-posts'
+  | 'adm-help-support';
 
 export type AnyPageId = StudentPageId | EmployerPageId | AdminPageId;
 
@@ -81,6 +90,7 @@ export interface StudentProfile {
   name: string;
   studentId: string;
   email: string;
+  programmeId?: string;
   degree: string;
   major: string;
   yearOfStudy: string;
@@ -89,6 +99,7 @@ export interface StudentProfile {
   bio: string;
   skills: string[];
   careerInterests: string[];
+  languages?: string[];
   preferredIndustries: string[];
   preferredLocations: string[];
   internshipAvailability: string;
@@ -103,6 +114,18 @@ export interface StudentProfile {
   workExperience: StudentExperience[];
 }
 
+export interface ProgrammeCatalogEntry {
+  id: string;
+  name: string;
+  level: string;
+  faculty: string;
+  skills: string[];
+  searchKeywords: string[];
+  active: boolean;
+  catalogueSource: string;
+  officiallyVerified: boolean;
+}
+
 export interface Opportunity {
   id: string;
   title: string;
@@ -110,7 +133,7 @@ export interface Opportunity {
   logoKey: string;
   industry: string;
   location: string;
-  workMode: 'Hybrid' | 'On-site' | 'Remote';
+  workMode: 'Hybrid' | 'On-site' | 'Remote' | 'Not specified';
   roleType: 'Internship' | 'Graduate Role' | 'Industrial Placement';
   degreeTarget: string;
   experienceLevel: string;
@@ -124,11 +147,12 @@ export interface Opportunity {
   responsibilities: string[];
   requirements: string[];
   isDemoListing: boolean;
-  approvalStatus?: 'Approved' | 'Pending Review' | 'Changes Requested';
+  approvalStatus?: 'Approved' | 'Pending Review' | 'Rejected' | 'Changes Requested';
   postedByEmployer?: boolean;
   sourceLabel?: string;
   sourceUrl?: string;
   applicationUrl?: string;
+  applicationMode?: 'internal' | 'external';
   eligibleMajors?: string[];
   internshipStartDate?: string;
   internshipEndDate?: string;
